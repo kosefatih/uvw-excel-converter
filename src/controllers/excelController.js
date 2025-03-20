@@ -14,8 +14,14 @@ const processExcel = async () => {
         console.log("Excel Verisi:", data);
         console.log("Dönüştürme Kuralları:", rules);
 
-        // 📌 3. Excel verisini işle
-        const newData = data.map(row => {
+        // 📌 3. Hersteller veya Bestell_Nr_ sütunları boş olan satırları kaldır
+        const filteredData = data.filter(row => {
+            // Hersteller veya Bestell_Nr_ boş ise false döner ve satır filtrelenir
+            return row["Hersteller"] && row["Bestell_Nr_"];
+        });
+
+        // 📌 4. Excel verisini işle
+        const newData = filteredData.map(row => {
             // 📌 Etiket oluştur (A + K + R + W sütunlarını birleştir)
             const etiket = `${row["Anlage"] || ""}${row["Funktion"] || ""}${row["Ort"] || ""}${row["BMK"] || ""}`.trim();
 
@@ -59,7 +65,6 @@ const processExcel = async () => {
                 abbreviation = "NEU";
             }
 
-
             // 📌 Bestell_Nr_ sütunundaki kodu al
             let kod = row["Bestell_Nr_"] || "";
 
@@ -86,12 +91,12 @@ const processExcel = async () => {
             return { "Etiket": etiket, "Kod": abbreviation + "." + kod, "Adet": adet };
         });
 
-        // 📌 4. Yeni Excel dosyasını oluştur
+        // 📌 5. Yeni Excel dosyasını oluştur
         const newWorkbook = XLSX.utils.book_new();
         const newWorksheet = XLSX.utils.json_to_sheet(newData, { header: ["Etiket", "Kod", "Adet"] });
         XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Düzenlenmiş");
 
-        // 📌 5. Dosyayı kaydet
+        // 📌 6. Dosyayı kaydet
         XLSX.writeFile(newWorkbook, "output.xlsx");
 
         console.log("✅ Excel dosyası başarıyla düzenlendi!");
