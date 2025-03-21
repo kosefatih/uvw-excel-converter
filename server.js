@@ -9,10 +9,16 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// 📌 Dosya Yükleme İçin Multer Ayarları
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "./uploads/");
+        const uploadDir = "./uploads";
+
+        // Klasör yoksa oluştur
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         cb(null, "input.xlsx");
