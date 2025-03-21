@@ -6,7 +6,14 @@ import { processExcel } from "./src/controllers/excelController.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+const corsOptions = {
+    origin: "http://localhost:8888",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"]
+  };
+  
+  app.use(cors(corsOptions));
+
 app.use(express.json());
 
 const storage = multer.diskStorage({
