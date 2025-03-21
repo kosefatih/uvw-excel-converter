@@ -9,15 +9,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // input.xlsx dosyasının tam yolu
-const inputFilePath = path.join(__dirname, '..', 'uploads', 'input.xlsx');
-const outputFilePath = path.join(__dirname, '..', 'uploads', 'output.xlsx');
+const outputFilePath = path.join(__dirname, '..','..', 'uploads', 'output.xlsx');
 
-const processExcel = async () => {
+const processExcel = async (inputFilePath) => {
     try {
         // 📌 1. Kuralları veritabanından çek
         const rules = await getRules();
 
         // 📌 2. Dosyanın varlığını kontrol et
+        if (!inputFilePath) {
+            throw new Error("Dosya yüklenmedi.");
+        }
+
         if (!fs.existsSync(inputFilePath)) {
             throw new Error(`Dosya bulunamadı: ${inputFilePath}`);
         }
@@ -114,8 +117,14 @@ const processExcel = async () => {
 
         // 📌 7. Dosyayı kaydet
         XLSX.writeFile(newWorkbook, outputFilePath);
-
         console.log("✅ Excel dosyası başarıyla düzenlendi!");
+
+        // 📌 9. Dosyanın varlığını kontrol et
+        if (fs.existsSync(outputFilePath)) {
+            console.log(`Çıktı dosyası başarıyla oluşturuldu: ${outputFilePath}`);
+        } else {
+            console.error(`Çıktı dosyası oluşturulamadı: ${outputFilePath}`);
+        }
     } catch (err) {
         console.error("❌ Excel dosyası işlenirken hata:", err);
     }
