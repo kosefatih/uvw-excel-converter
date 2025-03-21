@@ -1,26 +1,42 @@
 import { getRules } from "../models/ruleModel.js";
 import XLSX from "xlsx";
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// __dirname benzeri bir yapı oluşturma (ES modülleri için)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// input.xlsx dosyasının tam yolu
+const inputFilePath = path.join(__dirname, '..', 'uploads', 'input.xlsx');
+const outputFilePath = path.join(__dirname, '..', 'uploads', 'output.xlsx');
 
 const processExcel = async () => {
     try {
         // 📌 1. Kuralları veritabanından çek
         const rules = await getRules();
 
-        // 📌 2. Excel dosyasını oku
-        const workbook = XLSX.readFile("input.xlsx");
+        // 📌 2. Dosyanın varlığını kontrol et
+        if (!fs.existsSync(inputFilePath)) {
+            throw new Error(`Dosya bulunamadı: ${inputFilePath}`);
+        }
+
+        // 📌 3. Excel dosyasını oku
+        const workbook = XLSX.readFile(inputFilePath);
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const data = XLSX.utils.sheet_to_json(worksheet);
 
         console.log("Excel Verisi:", data);
         console.log("Dönüştürme Kuralları:", rules);
 
-        // 📌 3. Hersteller veya Bestell_Nr_ sütunları boş olan satırları kaldır
+        // 📌 4. Hersteller veya Bestell_Nr_ sütunları boş olan satırları kaldır
         const filteredData = data.filter(row => {
             // Hersteller veya Bestell_Nr_ boş ise false döner ve satır filtrelenir
             return row["Hersteller"] && row["Bestell_Nr_"];
         });
 
-        // 📌 4. Excel verisini işle
+        // 📌 5. Excel verisini işle
         const newData = filteredData.map(row => {
             // 📌 Etiket oluştur (A + K + R + W sütunlarını birleştir)
             const etiket = `${row["Anlage"] || ""}${row["Funktion"] || ""}${row["Ort"] || ""}${row["BMK"] || ""}`.trim();
@@ -91,13 +107,13 @@ const processExcel = async () => {
             return { "Etiket": etiket, "Kod": abbreviation + "." + kod, "Adet": adet };
         });
 
-        // 📌 5. Yeni Excel dosyasını oluştur
+        // 📌 6. Yeni Excel dosyasını oluştur
         const newWorkbook = XLSX.utils.book_new();
         const newWorksheet = XLSX.utils.json_to_sheet(newData, { header: ["Etiket", "Kod", "Adet"] });
         XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, "Düzenlenmiş");
 
-        // 📌 6. Dosyayı kaydet
-        XLSX.writeFile(newWorkbook, "output.xlsx");
+        // 📌 7. Dosyayı kaydet
+        XLSX.writeFile(newWorkbook, outputFilePath);
 
         console.log("✅ Excel dosyası başarıyla düzenlendi!");
     } catch (err) {
